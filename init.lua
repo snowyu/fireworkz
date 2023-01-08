@@ -18,12 +18,14 @@ end
 
 --Settings
 fireworkz.settings = {}
+local config = fireworkz.settings
 local settings = Settings(modpath .. DIR_DELIM .. "fireworkz.conf")
 fireworkz.settings.igniter = mcItems(settings:get("igniter") or "default:torch")
 fireworkz.settings.ignition_time = tonumber(settings:get("ignition_time")) or 3
 fireworkz.settings.max_hear_distance_fuse = tonumber(settings:get("max_hear_distance_fuse")) or 5
 fireworkz.settings.max_hear_distance_launch = tonumber(settings:get("max_hear_distance_launch")) or 13
 fireworkz.settings.max_hear_distance_bang = tonumber(settings:get("max_hear_distance_bang")) or 90
+fireworkz.settings.unlimit_rockets_launch = settings:get_bool("unlimit_rockets_launch", true)
 
 local variant_list = {
 	--{colour = "default", figure = "", form = "", desc = ""},
@@ -171,7 +173,7 @@ local rocket = {
 minetest.register_entity("fireworkz:rocket", rocket)
 
 function rocket:on_activate(staticdata)
-	minetest.sound_play("fireworkz_rocket", {pos=self.object:getpos(), max_hear_distance = fireworkz.settings.max_hear_distance_launch, gain = 1,})
+	minetest.sound_play("fireworkz_rocket", {pos=self.object:getpos(), max_hear_distance = config.max_hear_distance_launch, gain = 1,})
 	self.rocket_flytime = math.random(13,15)/10
 	self.object:setvelocity({x=0, y=9, z=0})
 	self.object:setacceleration({x= math.random(-5, 5), y= 33, z= math.random(-5, 5)})
@@ -200,7 +202,7 @@ function rocket:on_step(dtime)
 	end
 	if self.timer > self.rocket_flytime then
 		if #self.rdt > 0 then
-			minetest.sound_play("fireworkz_bang", {pos= self.object:get_pos(), max_hear_distance = fireworkz.settings.max_hear_distance_bang, gain = 3,})
+			minetest.sound_play("fireworkz_bang", {pos= self.object:get_pos(), max_hear_distance = config.max_hear_distance_bang, gain = 3,})
 			for _, i in pairs(self.rdt) do
 				local pos = self.object:getpos()
 				if i.figure == "ball" then
@@ -252,8 +254,8 @@ for _, i in pairs(variant_list) do
 		on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
 			local wielded_item = clicker:get_wielded_item()
 			local wielded_item_name = wielded_item:get_name()
-			if wielded_item_name == fireworkz.settings.igniter then
-				minetest.sound_play("fireworkz_fuse", {pos= pos, fireworkz.settings.max_hear_distance_fuse, gain = 1,})
+			if wielded_item_name == config.igniter then
+				minetest.sound_play("fireworkz_fuse", {pos= pos, config.max_hear_distance_fuse, gain = 1,})
 				minetest.after(fireworkz.settings.ignition_time, function(node, pos)
 					local rocket_node = minetest.get_node(pos)
 					if rocket_node.name == node.name then
@@ -426,7 +428,9 @@ if minetest.get_modpath("mesecons") ~= nil then
 					if node.name:sub(1, 16) == "fireworkz:rocket" then
 						local meta = minetest.get_meta(pos)
 						local rdt = minetest.deserialize(meta:get_string("firework:rdt"))
-						minetest.remove_node(pos)
+						if not config.unlimit_rockets_launch then
+							minetest.remove_node(pos)
+						end
 						fireworkz.launch(pos, rdt)
 					end
 				end
