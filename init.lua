@@ -252,6 +252,11 @@ for _, i in pairs(variant_list) do
 		groups = {choppy = 3, explody = 1, firework = 1},
 
 		on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+			if clicker:is_player() then
+				if minetest.is_protected(pos, clicker:get_player_name()) then
+					return
+				end
+			end
 			local wielded_item = clicker:get_wielded_item()
 			local wielded_item_name = wielded_item:get_name()
 			if wielded_item_name == config.igniter then
@@ -270,6 +275,10 @@ for _, i in pairs(variant_list) do
 			local pos = minetest.get_pointed_thing_position(pointed_thing, true)
 			if pos then
 				 fireworkz.launch(pos, rdt)
+				 if user:is_player() then
+					itemstack:take_item()
+					return itemstack
+				 end
 			end
 		end,
 
